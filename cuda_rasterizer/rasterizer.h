@@ -51,6 +51,8 @@ namespace CudaRasterizer
 			float* out_color,
 			float* out_depth,
 			float* out_alpha,
+			int* gaussians_count,
+			float* important_score,
 			int* radii = nullptr,
 			bool debug = false);
 

@@ -272,7 +272,9 @@ renderCUDA(
 	uint32_t* __restrict__ n_contrib,
 	const float* __restrict__ bg_color,
 	float* __restrict__ out_color,
-	float* __restrict__ out_depth)
+	float* __restrict__ out_depth,
+	int* __restrict__ gaussian_count,
+	float* __restrict__ important_score)
 {
 	// Identify current tile and associated min/max pixel range.
 	auto block = cg::this_thread_block();
@@ -353,6 +355,9 @@ renderCUDA(
 				continue;
 			}
 
+			gaussian_count[collected_id[j]]++;
+			important_score[collected_id[j]] += con_o.w; //opacity
+
 			// Eq. (3) from 3D Gaussian splatting paper.
 			for (int ch = 0; ch < CHANNELS; ch++)
 				C[ch] += features[collected_id[j] * CHANNELS + ch] * alpha * T;
@@ -390,7 +395,9 @@ void FORWARD::render(
 	uint32_t* n_contrib,
 	const float* bg_color,
 	float* out_color,
-	float* out_depth)
+	float* out_depth,
+	int* gaussians_count,
+	float* important_score)
 {
 	renderCUDA<NUM_CHANNELS> << <grid, block >> > (
 		ranges,
@@ -404,7 +411,9 @@ void FORWARD::render(
 		n_contrib,
 		bg_color,
 		out_color,
-		out_depth);
+		out_depth,
+		gaussians_count,
+		important_score);
 }
 
 void FORWARD::preprocess(int P, int D, int M,
